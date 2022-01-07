@@ -36,7 +36,7 @@ public class SystemNetMailer : GenericSmtpMailer, ISmtpMailer, IDisposable
         {
             SmtpClient client = new SmtpClient(Server, Port);
             client.Timeout = ConnectionSettings.Timeout;
-            client.EnableSsl = ConnectionSettings.Security == SecurityProtocolType.SSL;
+            client.EnableSsl = ConnectionSettings.Security == TransportEncryptionType.SSL;
             client.UseDefaultCredentials = false;
             client.Credentials = new NetworkCredential(Username, Password);
             client.DeliveryMethod = SmtpDeliveryMethod.Network;

@@ -40,13 +40,13 @@ public class MailKitMailer : GenericSmtpMailer, ISmtpMailer, IDisposable
 
         switch (ConnectionSettings.Security)
         {
-            case SecurityProtocolType.None:
+            case TransportEncryptionType.None:
                 secureSocketOptions = SecureSocketOptions.None;
                 break;
-            case SecurityProtocolType.SSL:
+            case TransportEncryptionType.SSL:
                 secureSocketOptions = SecureSocketOptions.SslOnConnect;
                 break;
-            case SecurityProtocolType.TLS:
+            case TransportEncryptionType.TLS:
                 secureSocketOptions = SecureSocketOptions.StartTls;
                 break;
             default:
@@ -103,13 +103,13 @@ public class MailKitMailer : GenericSmtpMailer, ISmtpMailer, IDisposable
 
         switch (ConnectionSettings.Security)
         {
-            case SecurityProtocolType.None:
+            case TransportEncryptionType.None:
                 secureSocketOptions = SecureSocketOptions.None;
                 break;
-            case SecurityProtocolType.SSL:
+            case TransportEncryptionType.SSL:
                 secureSocketOptions = SecureSocketOptions.SslOnConnect;
                 break;
-            case SecurityProtocolType.TLS:
+            case TransportEncryptionType.TLS:
                 secureSocketOptions = SecureSocketOptions.StartTls;
                 break;
             default:

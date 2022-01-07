@@ -1,9 +1,9 @@
 namespace Delobytes.Email;
 
 /// <summary>
-/// Тип протокола безопасности для соединения с сервером.
+/// Тип транспортного протокола безопасности для соединения с сервером.
 /// </summary>
-public enum SecurityProtocolType
+public enum TransportEncryptionType
 {
     /// <summary>
     /// Без шифрования.
@@ -36,7 +36,7 @@ public class ConnectionSettings
     /// </summary>
     /// <param name="security">Тип протокола безопасности для соединения с сервером.</param>
     /// <param name="timeout">Таймаут соединения (миллисекунды).</param>
-    public ConnectionSettings(SecurityProtocolType security, int timeout)
+    public ConnectionSettings(TransportEncryptionType security, int timeout)
     {
         Security = security;
         Timeout = timeout;
@@ -45,7 +45,7 @@ public class ConnectionSettings
     /// <summary>
     /// Тип протокола безопасности для соединения с сервером.
     /// </summary>
-    public SecurityProtocolType Security { get; } = SecurityProtocolType.TLS;
+    public TransportEncryptionType Security { get; } = TransportEncryptionType.TLS;
 
     /// <summary>
     /// Таймаут соединения (миллисекунды).

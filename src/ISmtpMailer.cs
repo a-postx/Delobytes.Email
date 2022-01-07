@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 namespace Delobytes.Email;
 
 /// <summary>
-/// Сервис посылки электропочтовых сообщений, который использует прямое подклчение к SMTP-серверу.
+/// Сервис отправки электропочтовых сообщений, который использует прямое подключение к SMTP-серверу.
 /// </summary>
 public interface ISmtpMailer
 {
