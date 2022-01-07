@@ -1,23 +1,6 @@
-namespace Delobytes.Email;
+using Microsoft.Extensions.DependencyInjection;
 
-/// <summary>
-/// Время жизни сервиса.
-/// </summary>
-public enum ServiceLifetime
-{
-    /// <summary>
-    /// Временное.
-    /// </summary>
-    Transient,
-    /// <summary>
-    /// Области действия.
-    /// </summary>
-    Scoped,
-    /// <summary>
-    /// Одноэлементное.
-    /// </summary>
-    Singleton
-}
+namespace Delobytes.Email;
 
 /// <summary>
 /// Настройки сервиса электропочты.

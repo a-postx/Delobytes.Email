@@ -6,10 +6,10 @@
     <Authors>Алексей Якубин</Authors>
     <Company>Делобайты</Company>
     <Copyright>Авторские права © Делобайты 2021. Все права защищены</Copyright>
-    <Description>Простой сервис посылки сообщений электропочты для .Net Core.</Description>
+    <Description>Простой сервис отправки сообщений электропочты для .Net Core.</Description>
 	<PackageProjectUrl>https://github.com/a-postx/Delobytes.Email</PackageProjectUrl>
 	<PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <Version>2.0.0-alpha1</Version>
+    <Version>2.0.0-alpha2</Version>
 	<RepositoryUrl>https://github.com/a-postx/Delobytes.Email.git</RepositoryUrl>
 	<RepositoryType>git</RepositoryType>
     <GenerateDocumentationFile>True</GenerateDocumentationFile>
