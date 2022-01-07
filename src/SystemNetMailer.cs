@@ -1,218 +1,259 @@
-﻿using System;
-using System.Collections.Concurrent;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Net.Mail;
+using System.Net.Mime;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 
-namespace Delobytes.Email
+namespace Delobytes.Email;
+
+/// <summary>
+/// Сервис отправки электропочтовых сообщений с использованием встроенной библиотеки System.Net.
+/// </summary>
+public class SystemNetMailer : GenericSmtpMailer, ISmtpMailer, IDisposable
 {
-    public class SystemNetMailer : Mailer, IMailer
+    /// <summary>
+    /// Конструктор.
+    /// </summary>
+    /// <param name="options">Настройки сервиса электропочты.</param>
+    /// <param name="logger">Логер.</param>
+    public SystemNetMailer(SmtpEmailOptions options, ILogger<SystemNetMailer> logger) : base(options)
     {
-        public SystemNetMailer(string outboundHost, string address, string username, string password, int port = 587) : base(outboundHost, address, username, password, port)
+        _log = logger;
+    }
+
+    private readonly ILogger<SystemNetMailer> _log;
+    private bool _disposedValue;
+
+
+    private SmtpClient GetClient()
+    {
+        try
         {
-            Init();
+            SmtpClient client = new SmtpClient(Server, Port);
+            client.Timeout = ConnectionSettings.Timeout;
+            client.EnableSsl = ConnectionSettings.Security == SecurityProtocolType.SSL;
+            client.UseDefaultCredentials = false;
+            client.Credentials = new NetworkCredential(Username, Password);
+            client.DeliveryMethod = SmtpDeliveryMethod.Network;
+
+            return client;
         }
-
-        private SmtpClient Client { get; set; }
-        
-        private static readonly ConcurrentDictionary<string, object> MailerLockersByMailAccount = new ConcurrentDictionary<string, object>();
-        private object _accountLocker => MailerLockersByMailAccount.GetOrAdd(Username, new object());
-
-        public ManualResetEventSlim DiscoveringCompleted { get; } = new ManualResetEventSlim(false);
-
-        private void Init()
+        catch (Exception ex)
         {
-
+            _log?.LogError(ex, "Can't get SMTP client for {Server}", Server);
+            return null;
         }
+    }
 
-        public Task DiscoverAsync(CancellationToken cancellationToken)
-        {
-            return DiscoverSystem();
-        }
+    private void Send(MailMessage message, int retryCount)
+    {
+        bool sentSuccessfully = false;
+        int retryCounter = 0;
 
-        private Task DiscoverSystem()
-        {
-            return Task.Run(() =>
-            {
-                SmtpClient client = CheckConnection();
-
-                if (client == null)
-                {
-                    throw new Exception("SystemNetMailer system is not avalable: please check credentials");
-                }
-
-                DiscoveringCompleted.Set();
-            });
-        }
-
-        private SmtpClient CheckConnection()
-        {
-            throw new NotImplementedException();
-        }
-
-        private void GetClientAndRun(Action action)
+        while (!sentSuccessfully && retryCounter < retryCount)
         {
             try
             {
-                lock (_accountLocker)
+                using (SmtpClient client = GetClient())
                 {
-                    using (Client = new SmtpClient(OutboundHost, Port))
+                    if (client == null)
                     {
-                        Client.EnableSsl = true;
-                        Client.Credentials = new NetworkCredential { UserName = Username, Password = Password };
-
-                        try
-                        {
-                            action();
-                        }
-                        catch (Exception e)
-                        {
-                            throw new Exception("Error running email sending action: ", e);
-                        }
+                        _log?.LogError("Error sending email message to {To}: no client", message.To);
+                        return;
                     }
+
+                    client.Send(message);
+
+                    sentSuccessfully = true;
+                    _log?.LogInformation("Email message has been sent {To}", message.To);
                 }
             }
-            catch (Exception e)
+            catch (SmtpException ex)
             {
-                throw new Exception("Can't get SMTP client for " + OutboundHost + ": ", e);
+                throw ex.InnerException == null ? ex : ex.InnerException.InnerException ?? ex.InnerException;
+            }
+            catch (Exception ex)
+            {
+                _log?.LogError(ex, "Error sending email {To} for {AttemptsCount}", message.To, retryCount);
+
+                retryCounter++;
+                Thread.Sleep(retryCount * 15000);
+            }
+        }
+    }
+
+    private MailMessage ConvertToMailMessage(EmailMessage emailMessage)
+    {
+        MailMessage message = new MailMessage();
+        MailAddress from = !string.IsNullOrEmpty(emailMessage.SenderName) ? new MailAddress(Username, emailMessage.SenderName) : new MailAddress(Username);
+        message.From = from;
+
+        if (string.IsNullOrEmpty(emailMessage.ReplyTo))
+        {
+            message.ReplyToList.Add(message.From);
+        }
+        else
+        {
+            message.ReplyToList.Add(emailMessage.ReplyTo);
+        }
+
+        foreach (string emailMessageRecipient in emailMessage.Recipients)
+        {
+            message.To.Add(new MailAddress(emailMessageRecipient));
+        }
+
+        if (emailMessage.CC.Count > 0)
+        {
+            foreach (string email in emailMessage.CC)
+            {
+                message.CC.Add(new MailAddress(email));
             }
         }
 
-        private void Send(System.Net.Mail.MailMessage message, int attempts = 1)
+        if (emailMessage.BCC.Count > 0)
         {
-            GetClientAndRun(() =>
+            foreach (string email in emailMessage.BCC)
             {
-                try
-                {
-                    Client.Send(message);
-                }
-                catch (Exception e)
-                {
-                    if (attempts < RetryCount)
-                    {
-                        Thread.Sleep(attempts * 15000);
-
-                        Send(message, attempts + 1);
-                    }
-                    else
-                    {
-                        throw new Exception($"Error sending email to {message.To} ({attempts} attempts taken).", e);
-                    }
-                }
-            });
-        }
-
-        private System.Net.Mail.MailMessage ConvertToMailMessage(MailMessage emailMessage)
-        {
-            System.Net.Mail.MailMessage message = new System.Net.Mail.MailMessage();
-            MailAddress from = emailMessage.SenderName != null ? new MailAddress(Username, emailMessage.SenderName) : new MailAddress(Username);
-            message.From = from;
-
-            foreach (string emailMessageRecipient in emailMessage.Recipients)
-            {
-                message.To.Add(new MailAddress(emailMessageRecipient));
-            }
-
-            if (emailMessage.CC.Count > 0)
-            {
-                foreach (string email in emailMessage.CC)
-                {
-                    message.CC.Add(new MailAddress(email));
-                }
-            }
-
-            if (emailMessage.BCC.Count > 0)
-            {
-                foreach (string email in emailMessage.BCC)
-                {
-                    message.Bcc.Add(new MailAddress(email));
-                }
-            }
-
-            message.Subject = emailMessage.Subject;
-            message.Body = emailMessage.Body;
-
-            emailMessage.Attachments.ForEach(path =>
-            {
-                if (File.Exists(path))
-                {
-                    message.Attachments.Add(new Attachment(path));
-                }
-            });
-
-            return message;
-        }
-
-        public void Send(IMailMessage message)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task<Tuple<bool,string>> SendAsync(IMailMessage message, CancellationToken cancellationToken = default)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void SendBulk(List<IMailMessage> messages)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task SendBulkAsync(List<IMailMessage> messages, CancellationToken cancellationToken = default)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void SendCalendarEvent(IMailMessage emailMessage, DateTime startTime, DateTime endTime)
-        {
-            try
-            {
-                System.Net.Mail.MailMessage message = ConvertToMailMessage((MailMessage)emailMessage);
-
-                message.Headers.Add("Content-class", "urn:content-classes:calendarmessage");
-
-                StringBuilder str = new StringBuilder();
-                str.AppendLine("BEGIN:VCALENDAR");
-                str.AppendLine("PRODID:- Acumatica Business Cloud event");
-                str.AppendLine("VERSION:2.0");
-                str.AppendLine("METHOD:REQUEST");
-                str.AppendLine("BEGIN:VEVENT");
-                str.AppendLine(string.Format("DTSTAMP:{0:yyyyMMddTHHmmssZ}", DateTime.UtcNow));
-                str.AppendLine(string.Format("DTSTART:{0:yyyyMMddTHHmmssZ}", startTime));
-                str.AppendLine(string.Format("DTEND:{0:yyyyMMddTHHmmssZ}", endTime));
-                str.AppendLine("LOCATION: Online");
-                str.AppendLine(string.Format("UID:{0}", emailMessage.Cd.ToString()));
-                str.AppendLine(string.Format("DESCRIPTION:{0}", message.Body));
-                str.AppendLine(string.Format("X-ALT-DESC;FMTTYPE=text/html:{0}", message.Body));
-                str.AppendLine(string.Format("SUMMARY:{0}", message.Subject));
-                str.AppendLine(string.Format("ORGANIZER:MAILTO:{0}", message.From.Address));
-
-                str.AppendLine(string.Format("ATTENDEE;CN=\"{0}\";RSVP=TRUE:mailto:{1}", message.To[0].DisplayName, message.To[0].Address));
-
-                str.AppendLine("BEGIN:VALARM");
-                str.AppendLine("TRIGGER:-PT15M");
-                str.AppendLine("ACTION:DISPLAY");
-                str.AppendLine("DESCRIPTION:Reminder");
-                str.AppendLine("END:VALARM");
-                str.AppendLine("END:VEVENT");
-                str.AppendLine("END:VCALENDAR");
-
-                System.Net.Mime.ContentType contype = new System.Net.Mime.ContentType("text/calendar");
-                contype.Parameters?.Add("method", "REQUEST");
-                contype.Parameters?.Add("name", "Meeting.ics");
-                AlternateView avCal = AlternateView.CreateAlternateViewFromString(str.ToString(), contype);
-                message.AlternateViews.Add(avCal);
-
-                Send(message);
-            }
-            catch (Exception e)
-            {
-                throw new Exception("Error sending calendar event: ", e);
+                message.Bcc.Add(new MailAddress(email));
             }
         }
+
+        message.Subject = emailMessage.Subject;
+        message.Body = emailMessage.Body;
+        message.IsBodyHtml = true;
+        message.BodyTransferEncoding = TransferEncoding.Base64;
+
+        emailMessage.AttachmentPaths.ForEach(path =>
+        {
+            if (File.Exists(path))
+            {
+                message.Attachments.Add(new Attachment(path));
+            }
+        });
+
+        return message;
+    }
+
+    /// <summary>
+    /// Послать электропочтовое сообщение.
+    /// </summary>
+    /// <param name="emailMessage">Сообщение.</param>
+    /// <param name="retryCount">Число повторных попыток отправки (по-умолчанию: 1)</param>
+    public void Send(EmailMessage emailMessage, int retryCount = 1)
+    {
+        throw new NotImplementedException();
+    }
+
+    /// <summary>
+    /// Послать электропочтовые сообщения.
+    /// </summary>
+    /// <param name="emailMessages">Сообщения.</param>
+    /// <param name="retryCount">Число повторных попыток отправки (по-умолчанию: 1)</param>
+    public void Send(IEnumerable<EmailMessage> emailMessages, int retryCount = 1)
+    {
+        throw new NotImplementedException();
+    }
+
+    /// <summary>
+    /// Послать электропочтовое сообщение асинхронно.
+    /// </summary>
+    /// <param name="emailMessage">Сообщение.</param>
+    /// <param name="retryCount">Число повторных попыток отправки (по-умолчанию: 1)</param>
+    /// <param name="cancellationToken">Токен отмены.</param>
+    /// <returns>Задачу, которая завершается после отправки сообщения.</returns>
+    public Task SendAsync(EmailMessage emailMessage, int retryCount = 1, CancellationToken cancellationToken = default)
+    {
+        throw new NotImplementedException();
+    }
+
+    /// <summary>
+    /// Послать электропочтовые сообщения асинхронно.
+    /// </summary>
+    /// <param name="emailMessages">Сообщения.</param>
+    /// <param name="retryCount">Число повторных попыток отправки (по-умолчанию: 1)</param>
+    /// <param name="cancellationToken">Токен отмены.</param>
+    /// <returns>Задачу, которая завершается после отправки сообщения.</returns>
+    public Task SendAsync(IEnumerable<EmailMessage> emailMessages, int retryCount = 1, CancellationToken cancellationToken = default)
+    {
+        throw new NotImplementedException();
+    }
+
+    /// <summary>
+    /// Послать сообщение с событием календаря.
+    /// </summary>
+    /// <param name="emailMessage">Сообщение, к которому необходимо прикрепить событие.</param>
+    /// <param name="startTime">Время начала события.</param>
+    /// <param name="endTime">Время конца события.</param>
+    /// <param name="retryCount">Число попыток отправки (по-умолчанию: 1)</param>
+    public void SendCalendarEvent(EmailMessage emailMessage, DateTime startTime, DateTime endTime, int retryCount = 1)
+    {
+        MailMessage message = ConvertToMailMessage(emailMessage);
+
+        message.Headers.Add("Content-class", "urn:content-classes:calendarmessage");
+
+        StringBuilder sb = new StringBuilder();
+        sb.AppendLine("BEGIN:VCALENDAR");
+        sb.AppendLine("PRODID:- Acumatica Business Cloud event");
+        sb.AppendLine("VERSION:2.0");
+        sb.AppendLine("METHOD:REQUEST");
+        sb.AppendLine("BEGIN:VEVENT");
+        sb.AppendLine(string.Format("DTSTAMP:{0:yyyyMMddTHHmmssZ}", DateTime.UtcNow));
+        sb.AppendLine(string.Format("DTSTART:{0:yyyyMMddTHHmmssZ}", startTime));
+        sb.AppendLine(string.Format("DTEND:{0:yyyyMMddTHHmmssZ}", endTime));
+        sb.AppendLine("LOCATION: Online");
+        sb.AppendLine(string.Format("UID:{0}", emailMessage.Id));
+        sb.AppendLine(string.Format("DESCRIPTION:{0}", message.Body));
+        sb.AppendLine(string.Format("X-ALT-DESC;FMTTYPE=text/html:{0}", message.Body));
+        sb.AppendLine(string.Format("SUMMARY:{0}", message.Subject));
+        sb.AppendLine(string.Format("ORGANIZER:MAILTO:{0}", message.From.Address));
+
+        sb.AppendLine(string.Format("ATTENDEE;CN=\"{0}\";RSVP=TRUE:mailto:{1}", message.To[0].DisplayName, message.To[0].Address));
+
+        sb.AppendLine("BEGIN:VALARM");
+        sb.AppendLine("TRIGGER:-PT15M");
+        sb.AppendLine("ACTION:DISPLAY");
+        sb.AppendLine("DESCRIPTION:Reminder");
+        sb.AppendLine("END:VALARM");
+        sb.AppendLine("END:VEVENT");
+        sb.AppendLine("END:VCALENDAR");
+
+        ContentType contype = new ContentType("text/calendar");
+        contype.Parameters?.Add("method", "REQUEST");
+        contype.Parameters?.Add("name", "Meeting.ics");
+        AlternateView avCal = AlternateView.CreateAlternateViewFromString(sb.ToString(), contype);
+        message.AlternateViews.Add(avCal);
+
+        Send(message, retryCount);
+    }
+
+    /// <summary>
+    /// Метод освобождения ресурсов.
+    /// </summary>
+    /// <param name="disposing">Флаг, который определяет необходимость освобождения управляемых ресурсов.</param>
+    protected virtual void Dispose(bool disposing)
+    {
+        if (!_disposedValue)
+        {
+            if (disposing)
+            {
+                // TODO: dispose managed state (managed objects)
+            }
+
+            _disposedValue = true;
+        }
+    }
+
+    /// <summary>
+    /// Метод освобождения ресурсов.
+    /// </summary>
+    public void Dispose()
+    {
+        Dispose(disposing: true);
+        GC.SuppressFinalize(this);
     }
 }

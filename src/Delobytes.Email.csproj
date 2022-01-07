@@ -1,18 +1,24 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
-    <LangVersion>7.1</LangVersion>
-    <Authors>Alexey Yakubin</Authors>
-    <Company>Delobytes</Company>
-    <Description>Email sending library</Description>
-    <PackageLicenseUrl></PackageLicenseUrl>
-    <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <Version>1.0.1</Version>
+    <TargetFramework>net6.0</TargetFramework>
+	<LangVersion>latest</LangVersion>
+    <Authors>Алексей Якубин</Authors>
+    <Company>Делобайты</Company>
+    <Copyright>Авторские права © Делобайты 2021. Все права защищены</Copyright>
+    <Description>Простой сервис посылки сообщений электропочты для .Net Core.</Description>
+	<PackageProjectUrl>https://github.com/a-postx/Delobytes.Email</PackageProjectUrl>
+	<PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <Version>2.0.0-alpha1</Version>
+	<RepositoryUrl>https://github.com/a-postx/Delobytes.Email.git</RepositoryUrl>
+	<RepositoryType>git</RepositoryType>
+    <GenerateDocumentationFile>True</GenerateDocumentationFile>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="MailKit" Version="2.1.3" />
+    <PackageReference Include="MailKit" Version="3.0.0" />
+	<PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="6.0.0" />
+	<PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="6.0.0" />
   </ItemGroup>
 
 </Project>
