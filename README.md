@@ -1,10 +1,10 @@
 ﻿# Delobytes.Email
-Простой сервис посылки электропочтовых сообщений на базе .Net Core.
+Простой сервис посылки электропочтовых сообщений на базе .Net.
 
 [RU](README.md), [EN](README.en.md)
 
 ## Использование
-Добавьте соответствующий сервис, чтобы использовать его в вашем проекте.
+Добавьте соответствующий сервис, чтобы использовать его в вашем проекте. Если в проекте подключено логирование на базе Microsoft.Extensions.Logging, то сервис также будет логировать свою активность.
 
 
 ### Классический SMTP-сервер
@@ -18,10 +18,10 @@ public void ConfigureServices(IServiceCollection services)
         {
             SmtpEmailOptions emailOptions = new SmtpEmailOptions
             {
-                ServiceLifetime = ServiceLifetime.Transient,
-                SmtpServer = "smtp.office365.com",
-                SmtpUsername = "myuser",
-                SmtpPassword = "myPassw0rd"
+                ServiceLifetime = ServiceLifetime.Scoped,
+                SmtpServer = options.MailServer,
+                SmtpUsername = options.MailUser,
+                SmtpPassword = options.MailPassword,
             };
 
             return emailOptions;
@@ -42,7 +42,7 @@ public class EmailSendingController : ControllerBase
         [FromBody] EmailMessage emailMessage,
         CancellationToken cancellationToken)
     {
-	    await mailer.SendAsync(emailMessage, cancellationToken: cancellationToken);
+        await mailer.SendAsync(emailMessage, cancellationToken: cancellationToken);
         return new OkResult();
     }
 }

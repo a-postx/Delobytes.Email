@@ -1,10 +1,10 @@
 # Delobytes.Email
-Simple email sending services based on .Net Core.
+Simple email sending services based on .Net.
 
 [RU](README.md), [EN](README.en.md)
 
 ## Usage
-Add proper services to use in your project.
+Add proper services to use in your project. In case you've added Microsoft.Extensions.Logging based logging then the service will log its activities to a common log.
 
 
 ### Classic SMTP server
@@ -18,7 +18,7 @@ public void ConfigureServices(IServiceCollection services)
         {
             SmtpEmailOptions emailOptions = new SmtpEmailOptions
             {
-				ServiceLifetime = ServiceLifetime.Transient,
+                ServiceLifetime = ServiceLifetime.Transient,
                 SmtpServer = "smtp.office365.com",
                 SmtpUsername = "myuser",
                 SmtpPassword = "myPassw0rd"
@@ -42,7 +42,7 @@ public class EmailSendingController : ControllerBase
         [FromBody] EmailMessage emailMessage,
         CancellationToken cancellationToken)
     {
-	    await mailer.SendAsync(emailMessage, cancellationToken: cancellationToken);
+        await mailer.SendAsync(emailMessage, cancellationToken: cancellationToken);
         return new OkResult();
     }
 }
