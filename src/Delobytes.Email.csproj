@@ -9,12 +9,23 @@
     <Description>Простой сервис отправки сообщений электропочты для .Net Core.</Description>
 	<PackageProjectUrl>https://github.com/a-postx/Delobytes.Email</PackageProjectUrl>
 	<PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <Version>2.0.0-beta1</Version>
+    <Version>2.0.0-beta2</Version>
 	<RepositoryUrl>https://github.com/a-postx/Delobytes.Email.git</RepositoryUrl>
 	<RepositoryType>git</RepositoryType>
     <GenerateDocumentationFile>True</GenerateDocumentationFile>
+    <ImplicitUsings>disable</ImplicitUsings>
   </PropertyGroup>
 
+  <ItemGroup>
+    <Using Include="System" />
+    <Using Include="System.Collections.Generic" />
+    <Using Include="System.Linq" />
+    <Using Include="System.Threading" />
+    <Using Include="System.Threading.Tasks" />
+    <Using Include="Microsoft.Extensions.Logging" />
+    <Using Include="Microsoft.Extensions.DependencyInjection" />
+  </ItemGroup>
+  
   <ItemGroup>
     <PackageReference Include="MailKit" Version="3.0.0" />
 	<PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="6.0.0" />

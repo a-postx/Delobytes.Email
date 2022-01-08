@@ -1,6 +1,3 @@
-using System;
-using Microsoft.Extensions.DependencyInjection;
-
 namespace Delobytes.Email;
 
 /// <summary>

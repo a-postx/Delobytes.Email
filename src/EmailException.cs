@@ -1,5 +1,3 @@
-using System;
-
 namespace Delobytes.Email;
 
 /// <summary>
