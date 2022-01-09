@@ -3,13 +3,13 @@ namespace Delobytes.Email;
 /// <summary>
 /// Сервис посылки электропочтовых сообщений с помощью протокола SMTP.
 /// </summary>
-public class GenericSmtpMailer
+public class SmtpMailer
 {
     /// <summary>
     /// Конструктор.
     /// </summary>
-    /// <param name="options">SMTP options.</param>
-    protected GenericSmtpMailer(SmtpEmailOptions options)
+    /// <param name="options">Настройки сервиса электропочты.</param>
+    protected SmtpMailer(SmtpEmailOptions options)
     {
         Server = options.SmtpServer;
         Username = options.SmtpUsername;

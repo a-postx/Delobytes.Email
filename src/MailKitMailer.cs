@@ -8,7 +8,7 @@ namespace Delobytes.Email;
 /// <summary>
 /// Сервис отправки электропочтовых сообщений с использованием библиотеки MailKit.
 /// </summary>
-public class MailKitMailer : GenericSmtpMailer, ISmtpMailer, IDisposable
+public class MailKitMailer : SmtpMailer, ISmtpMailer, IDisposable
 {
     /// <summary>
     /// Конструктор.

@@ -9,7 +9,7 @@ namespace Delobytes.Email;
 /// <summary>
 /// Сервис отправки электропочтовых сообщений с использованием встроенной библиотеки System.Net.
 /// </summary>
-public class SystemNetMailer : GenericSmtpMailer, ISmtpMailer, IDisposable
+public class SystemNetMailer : SmtpMailer, ISmtpMailer, IDisposable
 {
     /// <summary>
     /// Конструктор.
