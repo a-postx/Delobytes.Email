@@ -504,7 +504,7 @@ public class MailKitMailer : SmtpMailer, ISmtpMailer, IDisposable
         {
             if (disposing)
             {
-                if (_client.IsConnected)
+                if (_client != null && _client.IsConnected)
                 {
                     _client.Disconnect(true);
                 }
