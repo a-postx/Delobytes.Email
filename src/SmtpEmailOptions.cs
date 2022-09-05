@@ -15,7 +15,7 @@ public class SmtpEmailOptions
     /// SMTP-сервер.
     /// </para>
     /// </summary>
-    public string SmtpServer { get; set; }
+    public string SmtpServer { get; set; } = default!;
 
     /// <summary>
     /// <para>
@@ -29,14 +29,14 @@ public class SmtpEmailOptions
     /// Пользователь.
     /// </para>
     /// </summary>
-    public string SmtpUsername { get; set; }
+    public string SmtpUsername { get; set; } = default!;
 
     /// <summary>
     /// <para>
     /// Пароль.
     /// </para>
     /// </summary>
-    public string SmtpPassword { get; set; }
+    public string SmtpPassword { get; set; } = default!;
 
     /// <summary>
     /// Настройки соеднинения.

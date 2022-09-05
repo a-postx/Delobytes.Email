@@ -44,7 +44,7 @@ public class EmailMessage
     /// <summary>
     /// Имя источника сообщения.
     /// </summary>
-    public string SenderName { get; set; }
+    public string SenderName { get; set; } = string.Empty;
     /// <summary>
     /// Тема сообщения.
     /// </summary>

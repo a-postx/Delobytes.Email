@@ -15,17 +15,17 @@ public class MailKitMailer : SmtpMailer, ISmtpMailer, IDisposable
     /// </summary>
     /// <param name="options">Настройки сервиса электропочты.</param>
     /// <param name="logger">Логер.</param>
-    public MailKitMailer(SmtpEmailOptions options, ILogger<MailKitMailer> logger = null) : base(options)
+    public MailKitMailer(SmtpEmailOptions options, ILogger<MailKitMailer>? logger = null) : base(options)
     {
         _log = logger;
     }
 
-    private readonly ILogger<MailKitMailer> _log;
+    private readonly ILogger<MailKitMailer>? _log;
     private bool _disposedValue;
-    private SmtpClient _client;
+    private SmtpClient? _client;
 
 
-    private SmtpClient GetClient()
+    private SmtpClient? GetClient()
     {
         SmtpClient client = new SmtpClient();
         client.Timeout = ConnectionSettings.Timeout;
@@ -88,7 +88,7 @@ public class MailKitMailer : SmtpMailer, ISmtpMailer, IDisposable
         return client;
     }
 
-    private async Task<SmtpClient> GetClientAsync(CancellationToken cancellationToken)
+    private async Task<SmtpClient?> GetClientAsync(CancellationToken cancellationToken)
     {
         SmtpClient client = new SmtpClient();
         client.Timeout = ConnectionSettings.Timeout;
@@ -234,7 +234,7 @@ public class MailKitMailer : SmtpMailer, ISmtpMailer, IDisposable
             {
                 if (_client == null)
                 {
-                    using (SmtpClient client = GetClient())
+                    using (SmtpClient? client = GetClient())
                     {
                         if (client == null)
                         {
@@ -316,7 +316,7 @@ public class MailKitMailer : SmtpMailer, ISmtpMailer, IDisposable
             messages.Add(mimeMessage);
         });
 
-        using (SmtpClient client = GetClient())
+        using (SmtpClient? client = GetClient())
         {
             if (client == null)
             {
@@ -363,7 +363,7 @@ public class MailKitMailer : SmtpMailer, ISmtpMailer, IDisposable
             {
                 if (_client == null)
                 {
-                    using (SmtpClient client = await GetClientAsync(cancellationToken))
+                    using (SmtpClient? client = await GetClientAsync(cancellationToken))
                     {
                         if (client == null)
                         {
@@ -452,7 +452,7 @@ public class MailKitMailer : SmtpMailer, ISmtpMailer, IDisposable
             messages.Add(mimeMessage);
         });
 
-        using (SmtpClient client = await GetClientAsync(cancellationToken))
+        using (SmtpClient? client = await GetClientAsync(cancellationToken))
         {
             if (client == null)
             {
@@ -475,7 +475,7 @@ public class MailKitMailer : SmtpMailer, ISmtpMailer, IDisposable
 
                     foreach (MimeMessage message in batch)
                     {
-                        await SendAsync(message, 1, cancellationToken);
+                        await SendAsync(message, retryCount, cancellationToken);
                     }
 
                     if (batchCounter < batches.Count())

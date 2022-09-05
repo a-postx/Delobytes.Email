@@ -25,7 +25,7 @@ public class SystemNetMailer : SmtpMailer, ISmtpMailer, IDisposable
     private bool _disposedValue;
 
 
-    private SmtpClient GetClient()
+    private SmtpClient? GetClient()
     {
         try
         {
@@ -54,7 +54,7 @@ public class SystemNetMailer : SmtpMailer, ISmtpMailer, IDisposable
         {
             try
             {
-                using (SmtpClient client = GetClient())
+                using (SmtpClient? client = GetClient())
                 {
                     if (client == null)
                     {
@@ -205,7 +205,7 @@ public class SystemNetMailer : SmtpMailer, ISmtpMailer, IDisposable
         sb.AppendLine(string.Format("DESCRIPTION:{0}", message.Body));
         sb.AppendLine(string.Format("X-ALT-DESC;FMTTYPE=text/html:{0}", message.Body));
         sb.AppendLine(string.Format("SUMMARY:{0}", message.Subject));
-        sb.AppendLine(string.Format("ORGANIZER:MAILTO:{0}", message.From.Address));
+        sb.AppendLine(string.Format("ORGANIZER:MAILTO:{0}", message.From?.Address));
 
         sb.AppendLine(string.Format("ATTENDEE;CN=\"{0}\";RSVP=TRUE:mailto:{1}", message.To[0].DisplayName, message.To[0].Address));
 
